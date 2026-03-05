@@ -1,0 +1,156 @@
+{{template "header" .}}
+<h2 class="text-2xl font-bold mb-6">Settings</h2>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-bold mb-4">DNSTT Server</h3>
+        <div class="space-y-3 text-sm">
+            <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Status</span>
+                {{if index .dnstt "running"}}
+                <span class="px-2 py-1 bg-green-100 text-green-800 rounded font-medium">Running</span>
+                {{else}}
+                <span class="px-2 py-1 bg-red-100 text-red-800 rounded font-medium">Stopped</span>
+                {{end}}
+            </div>
+            <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Domain</span>
+                <span class="font-mono">{{index .dnstt "domain"}}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Server IP</span>
+                <span class="font-mono">{{index .dnstt "server_ip"}}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">DNSTT Port</span>
+                <span>{{index .dnstt "port"}}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">MTU</span>
+                <span>{{index .dnstt "mtu"}}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Forward Address</span>
+                <span class="font-mono">{{index .dnstt "forward_addr"}}</span>
+            </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button onclick="serverAction('start')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Start</button>
+            <button onclick="serverAction('stop')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Stop</button>
+            <button onclick="serverAction('restart')" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">Restart</button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-bold mb-4">Public Key</h3>
+        <textarea class="w-full p-3 border rounded font-mono text-xs bg-gray-50" rows="3" readonly>{{index .dnstt "pubkey"}}</textarea>
+
+        <h3 class="text-lg font-bold mt-6 mb-4">API Key</h3>
+        <div class="flex gap-2">
+            <input type="text" id="apiKeyField" value="{{.apiKey}}" readonly
+                class="flex-1 px-3 py-2 border rounded font-mono text-sm bg-gray-50">
+            <button onclick="copyAPIKey()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Copy</button>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Use this key in the X-API-Key header for API requests.</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-bold mb-4">Server Configuration</h3>
+        <form id="configForm" class="space-y-3">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">DNSTT Domain</label>
+                <input type="text" id="cfgDomain" value="{{.config.DNSTTDomain}}"
+                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">DNSTT Port</label>
+                    <input type="number" id="cfgDNSTTPort" value="{{.config.DNSTTPort}}"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">SSH Port</label>
+                    <input type="number" id="cfgSSHPort" value="{{.config.SSHPort}}"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">MTU</label>
+                    <input type="number" id="cfgMTU" value="{{.config.MTU}}"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Server IP</label>
+                    <input type="text" id="cfgServerIP" value="{{.config.ServerIP}}"
+                        class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">DNS Resolver</label>
+                <input type="text" id="cfgResolver" value="{{.config.DNSResolver}}"
+                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Save Configuration</button>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-bold mb-4">Admin Credentials</h3>
+        <form id="adminForm" class="space-y-3">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Username</label>
+                <input type="text" id="adminUser" value="{{.config.AdminUser}}"
+                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Password</label>
+                <input type="password" id="adminPass"
+                    class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter new password">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Update Credentials</button>
+        </form>
+    </div>
+</div>
+
+{{template "footer" .}}
+<script>
+async function serverAction(action) {
+    const res = await apiCall("POST", "/api/server/" + action);
+    alert(res.message || res.error);
+    location.reload();
+}
+
+function copyAPIKey() {
+    const field = document.getElementById("apiKeyField");
+    navigator.clipboard.writeText(field.value);
+    alert("API key copied!");
+}
+
+document.getElementById("configForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const body = {
+        dnstt_domain: document.getElementById("cfgDomain").value,
+        dnstt_port: parseInt(document.getElementById("cfgDNSTTPort").value),
+        ssh_port: parseInt(document.getElementById("cfgSSHPort").value),
+        mtu: parseInt(document.getElementById("cfgMTU").value),
+        server_ip: document.getElementById("cfgServerIP").value,
+        dns_resolver: document.getElementById("cfgResolver").value,
+    };
+    const res = await apiCall("PUT", "/api/server/config", body);
+    alert(res.message || res.error);
+});
+
+document.getElementById("adminForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const body = {
+        admin_user: document.getElementById("adminUser").value,
+        admin_pass: document.getElementById("adminPass").value,
+    };
+    if (!body.admin_pass) { alert("Enter a password"); return; }
+    const res = await apiCall("PUT", "/api/server/config", body);
+    alert(res.message || res.error);
+});
+</script>
+{{template "end" .}}

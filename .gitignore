@@ -1,0 +1,11 @@
+*.exe
+*.db
+*.key
+*.pub
+config.json
+dnstt-manager
+dnstt-server
+/data/
+/logs/
+.env
+*.log

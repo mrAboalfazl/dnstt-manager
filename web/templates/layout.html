@@ -1,0 +1,50 @@
+{{define "header"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNSTT Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .sidebar { min-height: 100vh; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <div class="sidebar w-64 bg-gray-900 text-white p-6">
+            <h1 class="text-xl font-bold mb-8">DNSTT Manager</h1>
+            <nav class="space-y-2">
+                <a href="/dashboard" class="block px-4 py-2 rounded hover:bg-gray-700">Dashboard</a>
+                <a href="/users" class="block px-4 py-2 rounded hover:bg-gray-700">Users</a>
+                <a href="/settings" class="block px-4 py-2 rounded hover:bg-gray-700">Settings</a>
+                <a href="/logout" class="block px-4 py-2 rounded hover:bg-gray-700 text-red-400 mt-8">Logout</a>
+            </nav>
+        </div>
+        <div class="flex-1 p-8">
+{{end}}
+
+{{define "footer"}}
+        </div>
+    </div>
+    <script>
+        const API_KEY = "{{.apiKey}}";
+        async function apiCall(method, url, body) {
+            const opts = {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": API_KEY
+                }
+            };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(url, opts);
+            return res.json();
+        }
+    </script>
+{{end}}
+
+{{define "end"}}
+</body>
+</html>
+{{end}}

@@ -1,0 +1,129 @@
+{{template "header" .}}
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold">Users</h2>
+    <a href="/users/new" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create User</a>
+</div>
+
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="p-4 border-b">
+        <form method="GET" action="/users" class="flex gap-4">
+            <input type="text" name="search" value="{{.search}}" placeholder="Search username..."
+                class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select name="status" class="px-3 py-2 border rounded-lg">
+                <option value="">All Status</option>
+                <option value="active" {{if eq .status "active"}}selected{{end}}>Active</option>
+                <option value="disabled" {{if eq .status "disabled"}}selected{{end}}>Disabled</option>
+                <option value="expired" {{if eq .status "expired"}}selected{{end}}>Expired</option>
+                <option value="traffic_exceeded" {{if eq .status "traffic_exceeded"}}selected{{end}}>Traffic Exceeded</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">Filter</button>
+        </form>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Connections</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Traffic</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {{if .result}}
+                {{range .result.Users}}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm">{{.ID}}</td>
+                    <td class="px-4 py-3 text-sm font-mono">{{.Username}}</td>
+                    <td class="px-4 py-3 text-sm">
+                        {{if eq .Status "active"}}
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Active</span>
+                        {{else if eq .Status "disabled"}}
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Disabled</span>
+                        {{else if eq .Status "expired"}}
+                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">Expired</span>
+                        {{else}}
+                        <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs">Traffic Exceeded</span>
+                        {{end}}
+                    </td>
+                    <td class="px-4 py-3 text-sm">{{.MaxConnections}}</td>
+                    <td class="px-4 py-3 text-sm">
+                        {{printf "%.2f" .TrafficUsedGB}} GB
+                        {{if gt .TrafficLimitGB 0.0}}
+                        / {{printf "%.2f" .TrafficLimitGB}} GB
+                        {{else}}
+                        / Unlimited
+                        {{end}}
+                    </td>
+                    <td class="px-4 py-3 text-sm">{{.ExpiresAt.Format "2006-01-02"}}</td>
+                    <td class="px-4 py-3 text-sm">
+                        {{if .IsTest}}
+                        <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Test</span>
+                        {{else}}
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Regular</span>
+                        {{end}}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <div class="flex gap-1">
+                            <a href="/users/{{.ID}}/edit" class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">Edit</a>
+                            {{if .Enabled}}
+                            <button onclick="toggleUser({{.ID}}, 'disable')" class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200">Disable</button>
+                            {{else}}
+                            <button onclick="toggleUser({{.ID}}, 'enable')" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">Enable</button>
+                            {{end}}
+                            <button onclick="resetTraffic({{.ID}})" class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs hover:bg-purple-200">Reset</button>
+                            <button onclick="deleteUser({{.ID}})" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                {{end}}
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    {{if .result}}
+    <div class="p-4 border-t flex justify-between items-center text-sm text-gray-600">
+        <span>Total: {{.result.Total}} users | Page {{.result.Page}} of {{.result.TotalPages}}</span>
+        <div class="flex gap-2">
+            {{if gt .result.Page 1}}
+            <a href="/users?page={{sub .result.Page 1}}&search={{$.search}}&status={{$.status}}"
+                class="px-3 py-1 border rounded hover:bg-gray-50">Prev</a>
+            {{end}}
+            {{if lt .result.Page .result.TotalPages}}
+            <a href="/users?page={{add .result.Page 1}}&search={{$.search}}&status={{$.status}}"
+                class="px-3 py-1 border rounded hover:bg-gray-50">Next</a>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+
+{{template "footer" .}}
+<script>
+async function toggleUser(id, action) {
+    const res = await apiCall("POST", "/api/users/" + id + "/" + action);
+    if (res.error) { alert(res.error); return; }
+    location.reload();
+}
+
+async function resetTraffic(id) {
+    if (!confirm("Reset traffic for this user?")) return;
+    const res = await apiCall("POST", "/api/users/" + id + "/reset-traffic");
+    if (res.error) { alert(res.error); return; }
+    location.reload();
+}
+
+async function deleteUser(id) {
+    if (!confirm("Delete this user permanently?")) return;
+    const res = await apiCall("DELETE", "/api/users/" + id);
+    if (res.error) { alert(res.error); return; }
+    location.reload();
+}
+</script>
+{{template "end" .}}

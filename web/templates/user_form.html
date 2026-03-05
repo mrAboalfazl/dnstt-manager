@@ -1,0 +1,118 @@
+{{template "header" .}}
+<div class="max-w-2xl">
+    <h2 class="text-2xl font-bold mb-6">
+        {{if .isEdit}}Edit User{{else}}Create User{{end}}
+    </h2>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form id="userForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input type="text" id="username" required minlength="3" maxlength="32"
+                    {{if .isEdit}}value="{{.user.Username}}" disabled{{end}}
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Password {{if .isEdit}}(leave empty to keep current){{end}}
+                </label>
+                <input type="text" id="password" {{if not .isEdit}}required minlength="4"{{end}}
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Connections</label>
+                    <input type="number" id="maxConnections" required min="1" value="{{if .isEdit}}{{.user.MaxConnections}}{{else}}1{{end}}"
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Traffic Limit (GB, 0 = unlimited)</label>
+                    <input type="number" id="trafficLimit" required min="0" step="0.1" value="{{if .isEdit}}{{printf "%.1f" .user.TrafficLimitGB}}{{else}}0{{end}}"
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Expires At</label>
+                <input type="date" id="expiresAt" required
+                    value="{{if .isEdit}}{{.user.ExpiresAt.Format "2006-01-02"}}{{end}}"
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                    {{if .isEdit}}Update{{else}}Create{{end}}
+                </button>
+                <a href="/users" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">Cancel</a>
+            </div>
+        </form>
+
+        {{if .isEdit}}
+        <div class="mt-6 pt-6 border-t">
+            <h3 class="text-lg font-bold mb-3">User Config</h3>
+            <div class="flex gap-2">
+                <button onclick="getConfig()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Show Config</button>
+                <button onclick="getLink()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm">Get Link</button>
+            </div>
+            <div id="configResult" class="mt-4 hidden">
+                <textarea id="configText" class="w-full p-3 border rounded-lg font-mono text-sm bg-gray-50" rows="12" readonly></textarea>
+            </div>
+        </div>
+        {{end}}
+    </div>
+</div>
+
+{{template "footer" .}}
+<script>
+const isEdit = {{.isEdit}};
+const userId = {{if .isEdit}}{{.user.ID}}{{else}}0{{end}};
+
+document.getElementById("userForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    if (isEdit) {
+        const body = {
+            max_connections: parseInt(document.getElementById("maxConnections").value),
+            traffic_limit_gb: parseFloat(document.getElementById("trafficLimit").value),
+            expires_at: document.getElementById("expiresAt").value
+        };
+        const pw = document.getElementById("password").value;
+        if (pw) body.password = pw;
+
+        const res = await apiCall("PUT", "/api/users/" + userId, body);
+        if (res.error) { alert(res.error); return; }
+        alert("User updated");
+        location.href = "/users";
+    } else {
+        const body = {
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+            max_connections: parseInt(document.getElementById("maxConnections").value),
+            traffic_limit_gb: parseFloat(document.getElementById("trafficLimit").value),
+            expires_at: document.getElementById("expiresAt").value
+        };
+
+        const res = await apiCall("POST", "/api/users", body);
+        if (res.error) { alert(res.error); return; }
+        alert("User created: " + res.user.username);
+        location.href = "/users";
+    }
+});
+
+async function getConfig() {
+    const res = await apiCall("GET", "/api/users/" + userId + "/config");
+    if (res.error) { alert(res.error); return; }
+    document.getElementById("configResult").classList.remove("hidden");
+    document.getElementById("configText").value = res.config_file;
+}
+
+async function getLink() {
+    const res = await apiCall("GET", "/api/users/" + userId + "/link");
+    if (res.error) { alert(res.error); return; }
+    document.getElementById("configResult").classList.remove("hidden");
+    document.getElementById("configText").value = res.link;
+}
+</script>
+{{template "end" .}}

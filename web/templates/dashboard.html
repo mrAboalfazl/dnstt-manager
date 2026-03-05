@@ -1,0 +1,97 @@
+{{template "header" .}}
+<h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Total Users</div>
+        <div class="text-3xl font-bold text-blue-600">{{index .stats "total_users"}}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Active Users</div>
+        <div class="text-3xl font-bold text-green-600">{{index .stats "active_users"}}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Online Now</div>
+        <div class="text-3xl font-bold text-purple-600">{{.onlineUsers}}</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="text-gray-500 text-sm">Test Users</div>
+        <div class="text-3xl font-bold text-orange-600">{{index .stats "test_users"}}</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-bold mb-4">DNSTT Server</h3>
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <span class="text-gray-600">Status</span>
+                {{if index .dnstt "running"}}
+                <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm font-medium">Running</span>
+                {{else}}
+                <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-sm font-medium">Stopped</span>
+                {{end}}
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Domain</span>
+                <span class="font-mono text-sm">{{index .dnstt "domain"}}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">Port</span>
+                <span>{{index .dnstt "port"}}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-600">MTU</span>
+                <span>{{index .dnstt "mtu"}}</span>
+            </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button onclick="serverAction('start')" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Start</button>
+            <button onclick="serverAction('stop')" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm">Stop</button>
+            <button onclick="serverAction('restart')" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">Restart</button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+        <div class="space-y-3">
+            <a href="/users/new" class="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create User</a>
+            <button onclick="createTestUser()" class="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Create Test User (1h, 100MB)</button>
+        </div>
+        <div id="testUserResult" class="mt-4 hidden">
+            <div class="bg-gray-50 rounded p-4 text-sm">
+                <div><strong>Username:</strong> <span id="testUsername"></span></div>
+                <div><strong>Password:</strong> <span id="testPassword"></span></div>
+                <div class="mt-2"><strong>Link:</strong></div>
+                <textarea id="testLink" class="w-full mt-1 p-2 border rounded text-xs font-mono" rows="2" readonly></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{template "footer" .}}
+<script>
+async function serverAction(action) {
+    const res = await apiCall("POST", "/api/server/" + action);
+    alert(res.message || res.error);
+    location.reload();
+}
+
+async function createTestUser() {
+    const expires = new Date(Date.now() + 3600000).toISOString();
+    const res = await apiCall("POST", "/api/test-users", {
+        max_connections: 1,
+        traffic_limit_gb: 0.1,
+        expires_at: expires
+    });
+    if (res.error) {
+        alert(res.error);
+        return;
+    }
+    document.getElementById("testUserResult").classList.remove("hidden");
+    document.getElementById("testUsername").textContent = res.user.username;
+    document.getElementById("testPassword").textContent = res.password;
+    document.getElementById("testLink").value = res.link;
+}
+</script>
+{{template "end" .}}
